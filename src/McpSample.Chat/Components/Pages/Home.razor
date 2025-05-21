@@ -1,6 +1,9 @@
 ﻿@page "/"
 @using Azure
+@using Azure.Core;
+@using Azure.AI.Inference
 @using Azure.AI.OpenAI
+@using Azure.Core.Pipeline
 @using Azure.Identity
 @using McpSample.BlazorChat.Services
 @using Microsoft.Extensions.AI
@@ -18,12 +21,11 @@
 
 <div class="chat-container">
     <div class="chat-bubble assistant">
-        <div class="chat-title">Chat with an MCP Server</div>
+        <div class="chat-title">Sales Chat with an MCP Server</div>
         <div class="chat-content">
-            <p>Hi, I'm a client to test MCP using a model <b>[@deploymentName]</b> with <b>[@clientMode]</b></p>
-            <p>Check the Settings page to test the model using GitHub Models, Ollama or Azure AI Foundry or to use custom settings.</p>
+            <p>Hola soy un asistente de ventas. Uso el siguiente servicio para contestar tus preguntas <b>[@deploymentName]</b> with <b>[@clientMode]</b></p>
         </div>
-        <div class="chat-title">Current MCP Tools in the Server:</div>
+        <div class="chat-title">Tengo las siguientes herramientas para contestar tus preguntas:</div>
         <div class="chat-content">
             @if (tools is not null)
                 foreach (var tool in tools)
@@ -44,12 +46,12 @@
 
         messageContent = message?.Text ?? string.Empty;
 
-        if (message.Role == ChatRole.User)
+        if (message.Role == Microsoft.Extensions.AI.ChatRole.User)
         {
             messageTitle = "User";
             chatBubbleClass = "chat-bubble user";
         }
-        if (message.Role == ChatRole.Assistant)
+        if (message.Role == Microsoft.Extensions.AI.ChatRole.Assistant)
         {
             messageTitle = "Assistant";
             chatBubbleClass = "chat-bubble assistant";
@@ -62,12 +64,12 @@
                 messageContent = match.Groups[2].Value.Trim();
             }
         }
-        if (message.Role == ChatRole.System)
+        if (message.Role == Microsoft.Extensions.AI.ChatRole.System)
         {
             messageContent = string.Empty;
         }
 
-        if (message.Role == ChatRole.Tool)
+        if (message.Role == Microsoft.Extensions.AI.ChatRole.Tool)
         {
             messageTitle = "Tool";
             messageContent = string.Empty;
@@ -152,7 +154,7 @@
         tools = await McpClient.ListToolsAsync();
 
         // system message
-        ChatMessages.Add(new ChatMessage(ChatRole.System, "You are a helpful assistant. You always replies using text and emojis. You never generate HTML or Markdown. You only do what the user ask you to do. If you don't have a function to answer a question, you just answer que question"));
+        ChatMessages.Add(new ChatMessage(Microsoft.Extensions.AI.ChatRole.System, "You are a helpful sales assistant. You always replies using text and emojis. You never generate HTML or Markdown. You only do what the user ask you to do. If you don't have a function to answer a question, you just don't answer tue question. Whe it comes to sales numbers show de values in currency format"));
     }
 
     private async Task AskQuestion(MouseEventArgs e)
@@ -169,7 +171,7 @@
             }
 
             Logger.LogInformation($"Add user question: {userQuestion}");
-            ChatMessages.Add(new ChatMessage(ChatRole.User, userQuestion));
+            ChatMessages.Add(new ChatMessage(Microsoft.Extensions.AI.ChatRole.User, userQuestion));
 
             // Clear the userQuestion textbox
             userQuestion = string.Empty;
@@ -224,13 +226,30 @@
                 {
                     clientMode = "Azure with Default Credentials";
                     Logger.LogInformation("Using DefaultAzureCredential");
-                    client = new AzureOpenAIClient(
+                    
+                    var credential = new DefaultAzureCredential();
+                    
+                    /* AzureAIInferenceClientOptions clientOptions = new AzureAIInferenceClientOptions();
+                    BearerTokenAuthenticationPolicy tokenPolicy = new BearerTokenAuthenticationPolicy(credential, new string[] { "https://cognitiveservices.azure.com/.default" });
+                    clientOptions.AddPolicy(tokenPolicy, HttpPipelinePosition.PerRetry);
+
+                    client = new ChatCompletionsClient(
                         new Uri(endpoint),
-                        new DefaultAzureCredential())
-                        .AsChatClient(deploymentName)
-                        .AsBuilder()
-                        .UseFunctionInvocation()
-                        .Build();
+                        credential,
+                        clientOptions
+                    ).AsIChatClient(deploymentName)
+                    .AsBuilder()
+                    .UseFunctionInvocation()
+                    .Build();
+                    */
+                    client = new AzureOpenAIClient(
+					new Uri(endpoint),
+							credential)
+							.GetChatClient(deploymentName).AsIChatClient()
+							.AsBuilder()
+							.UseFunctionInvocation()
+							.Build();
+					
                 }
                 else
                 {
