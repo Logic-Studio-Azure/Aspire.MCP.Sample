@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/powerbichat"
 @using Azure
 @using Azure.Core;
 @using Azure.AI.Inference
@@ -15,23 +15,20 @@
 @attribute [StreamRendering(true)]
 @rendermode InteractiveServer
 
-<PageTitle>LogicStore Sales - BI Chat</PageTitle>
+<PageTitle>LogicStudio Store - BI Chat</PageTitle>
 
 <link href="css/Home.css" rel="stylesheet" />
 
+<div>
+    <iframe title="DemoFabricreportPbix" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=b13c4119-e317-42f4-8e41-d2f50884d605&autoAuth=true&ctid=cac46793-b4a4-4434-b737-914311cb65a2" frameborder="0" allowFullScreen="true"></iframe>
+</div>
+
 <div class="chat-container">
+    
     <div class="chat-bubble assistant">
         <div class="chat-title">LogicStudio Store - BI Chat</div>
         <div class="chat-content">
             <p>Hola soy un asistente de ventas. Uso el siguiente modelo para contestar tus preguntas <b>[@deploymentName]</b></p>
-        </div>
-        <div class="chat-title">Tengo las siguientes herramientas para contestar tus preguntas:</div>
-        <div class="chat-content">
-            @if (tools is not null)
-                foreach (var tool in tools)
-                {
-                    <p>- <b>@tool.Name</b>: @tool.Description</p>
-                }
         </div>
     </div>
 
